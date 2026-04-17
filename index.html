@@ -16,14 +16,6 @@
     color: rgba(0,0,0,0.28);
     border-bottom: 1px solid rgba(0,0,0,0.08);
   }
-  #sprite-wrap {
-    position: fixed; pointer-events: none; z-index: 20;
-  }
-  #sprite-img {
-    max-width: 180px; max-height: 220px;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));
-  }
   #watermark {
     position: fixed; bottom: 10px; right: 14px; z-index: 20;
     font-family: Georgia, serif; font-size: 9px;
@@ -35,7 +27,10 @@
 <body>
 <canvas id="c"></canvas>
 <div id="day-header" style="display:none;"></div>
-<div id="sprite-wrap" style="display:none;"><img id="sprite-img" src="" alt="" /></div>
+<div id="weather-bar" style="display:none; position:fixed; bottom:28px; left:0; right:0; z-index:20; padding:0 5%; justify-content:space-between; pointer-events:none;">
+  <span id="weather-left"  style="font-family:Georgia,serif; font-size:12px; letter-spacing:0.08em; color:rgba(0,0,0,0.35);"></span>
+  <span id="weather-right" style="font-family:Georgia,serif; font-size:12px; letter-spacing:0.08em; color:rgba(0,0,0,0.35);"></span>
+</div>
 <div id="watermark">Cozy Scenes</div>
 
 <script>
@@ -45,9 +40,13 @@
   const params     = new URLSearchParams(location.search);
   const P_FONT     = 'random';
   const P_DAY      = params.get('day')    || 'off';
-  const P_SPRITE   = params.get('sprite') || 'none';
   const P_ISH      = params.get('ish')    || 'off';
   const P_OFFSET   = parseInt(params.get('offset')) || 0;
+  const P_WEATHER  = params.get('weather') || 'false';
+  const P_TEMPUNIT = params.get('temp_unit') || 'fahrenheit';
+  const P_CITY     = params.get('city') || '';
+  const P_WTTR_TEMP   = params.get('wttr_temp') || '';
+  const P_WTTR_COND   = params.get('wttr_cond') || '';
 
   // ── RNG ───────────────────────────────────────────────────────────────────
   function Rng(seed) {
@@ -55,32 +54,15 @@
     return {
       next()      { s ^= s<<13; s ^= s>>>17; s ^= s<<5; return (s>>>0)/4294967296; },
       range(a,b)  { return a + this.next()*(b-a); },
-      pick(arr)   { return arr[Math.floor(this.next()*arr.length)]; }
+      pick(arr)   { return arr[Math.floor(this.next()*arr.length)]; },
+      int(a,b)    { return Math.floor(this.range(a, b + 1)); }
     };
   }
   const seed      = Date.now();
   const rng       = Rng(seed);
   const fontRng   = Rng((seed * 2654435761) >>> 0);
-  const spriteRng = Rng((seed * 1234567891) >>> 0);
 
   // ── Asset pools ───────────────────────────────────────────────────────────
-  const BASE_GH = 'https://raw.githubusercontent.com/CozyScenes/cozy-scenes-assets/main/dcm/backgrounds/';
-  const SPRITES_VIBES = [
-    '1qvms3','267upo','2essk1','3f6o5f','4yvyil','76gav3','7vkd2x',
-    '86gv4h','ab0ffh','al3jar','au6908','bkm783','h4e3dd','hysrss',
-    'iieief','kaf40m','nisa1k','ovs1kj','pjddph','qkhky2','sp3h2l'
-  ].map(id => BASE_GH + id + '.png');
-
-  const BASE_CAT = 'https://files.catbox.moe/';
-  const SPRITES_WAIFU = [
-    'y2kh7h','mlj36k','mbkw8p','69e0m4','3myqdn','247civ','h4nsc4',
-    '80b2tt','zz4n65','g8fdqb','l209q8','gkvvz5','bjhzqk','hqj1g4',
-    '6nsona','btr6ew','rmqrg7','oeitj4','z4gmjf','ryyjmf','ibx134',
-    'z3czkd','s9nqnu','x47bd1','8mft5j','p620sc','lgmndh','1j55cc',
-    '5q97kv','ozn8ji','vsjzs0','vbny4k','ce258p','4t6hrh','rewhkt',
-    'gh29m2','3w01c0'
-  ].map(id => BASE_CAT + id + '.png');
-
   // ── Fonts ─────────────────────────────────────────────────────────────────
   const FONTS = [
     { family: 'Bebas Neue',       url: 'Bebas+Neue',           weight: '400' },
@@ -131,10 +113,6 @@
   const jitter    = rng.next() > 0.7;
   const borderW   = rng.next() > 0.6 ? rng.range(0.5, 2.0) : 0;
 
-  // sprite placement
-  const spriteAbove  = spriteRng.next() > 0.5;
-  const spriteHAlign = spriteRng.pick(['left','center','right']);
-
   // ── Resolve font ──────────────────────────────────────────────────────────
   // TRMNL slugifies option values, build a slug map too
   const FONT_SLUG_MAP = {};
@@ -144,41 +122,34 @@
     : (FONT_MAP[P_FONT] || FONT_SLUG_MAP[P_FONT]);
 
   // ── Day header ────────────────────────────────────────────────────────────
+  // ── Phrase pool for day header ──────────────────────────────────────────
+  const PHRASES = [
+    // chill / soft
+    'softly','breathe','just this','unfold','still here','be gentle','this moment','open wide',
+    // energetic / inspiring
+    'rise up','make it count','go further','ignite','chase it','light it up','push through','claim it',
+    // motivational
+    "you've got this",'keep going','one more step','begin again','show up','stay the course','believe it','keep the faith',
+    // dreamy / poetic
+    'wander freely','dream louder','bloom','open skies','the world waits','float on','let it be','shine on',
+    // bonus
+    'make waves','eyes open','feel it','own today','go gently','spark it','trust yourself','flow'
+  ];
+  const phraseIdx = rng.int(0, PHRASES.length - 1);
+  const phrase    = PHRASES[phraseIdx];
+
   if (P_DAY === 'on' || P_DAY === 'true') {
     const now2   = new Date(Date.now() + P_OFFSET * 1000);
     const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const MONTHS = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
     const hdr = document.getElementById('day-header');
-    hdr.textContent = DAYS[now2.getUTCDay()] + ' · ' + MONTHS[now2.getUTCMonth()] + ' ' + now2.getUTCDate();
+    const dateStr = DAYS[now2.getUTCDay()] + ' · ' + MONTHS[now2.getUTCMonth()] + ' ' + now2.getUTCDate();
+    hdr.textContent = phrase + ' · ' + dateStr;
     hdr.style.display = 'block';
   }
 
-  // ── Sprite ────────────────────────────────────────────────────────────────
-  if (P_SPRITE && P_SPRITE !== 'none' && P_SPRITE !== '') {
-    let pool;
-    if (P_SPRITE === 'vibes' || P_SPRITE === 'cozy_daily_vibes')  pool = SPRITES_VIBES;
-    else if (P_SPRITE === 'waifu' || P_SPRITE === 'cozy_waifu') pool = SPRITES_WAIFU;
-    else pool = spriteRng.next() > 0.5 ? SPRITES_VIBES : SPRITES_WAIFU;
 
-    const url  = spriteRng.pick(pool);
-    const wrap = document.getElementById('sprite-wrap');
-    const img  = document.getElementById('sprite-img');
-    img.src = url;
-    wrap.style.display = 'block';
-
-    const imgH   = 200;
-    const clockY = H / 2;
-    const topPos = spriteAbove ? clockY - imgH - 60 : clockY + 80;
-    let leftPos;
-    if (spriteHAlign === 'left')   leftPos = W * 0.05;
-    if (spriteHAlign === 'center') leftPos = (W - 180) / 2;
-    if (spriteHAlign === 'right')  leftPos = W * 0.95 - 180;
-    wrap.style.top    = Math.max(10, topPos) + 'px';
-    wrap.style.left   = leftPos + 'px';
-    wrap.style.width  = '180px';
-    wrap.style.height = imgH + 'px';
-  }
 
   // ── Load font then draw ───────────────────────────────────────────────────
   const link = document.createElement('link');
@@ -188,6 +159,28 @@
 
   document.fonts.load(fontObj.weight + ' 40px \'' + fontObj.family + '\'')
     .then(drawAll).catch(drawAll);
+
+  // ── Weather display ────────────────────────────────────────────────────
+  if ((P_WEATHER === 'true' || P_WEATHER === 'on') && P_WTTR_COND) {
+    const COND_MAP = {
+      'sunny': '☀', 'clear': '☀', 'partly cloudy': '⛅', 'cloudy': '☁',
+      'overcast': '☁', 'mist': '🌫', 'fog': '🌫', 'rain': '🌧',
+      'drizzle': '🌦', 'snow': '❄', 'sleet': '🌨', 'thunder': '⛈',
+      'blizzard': '❄', 'ice': '❄'
+    };
+    const condLower = P_WTTR_COND.toLowerCase();
+    let icon = '🌡';
+    for (const key in COND_MAP) { if (condLower.includes(key)) { icon = COND_MAP[key]; break; } }
+
+    const unit = (P_TEMPUNIT === 'celsius' || P_TEMPUNIT === 'Celsius') ? '°c' : '°f';
+    const condText  = icon + ' ' + condLower;
+    const tempText  = P_WTTR_TEMP + unit;
+
+    const weather = document.getElementById('weather-bar');
+    document.getElementById('weather-left').textContent  = condText;
+    document.getElementById('weather-right').textContent = tempText;
+    weather.style.display = 'flex';
+  }
 
   // ── Draw everything ───────────────────────────────────────────────────────
   function drawAll() {
