@@ -6,188 +6,95 @@
 <title>Cozy Scenes: Space Time</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #f5f2ec; font-family: Georgia, serif; }
-
-  /* ── Settings panel ── */
-  #settings-btn {
-    position: fixed; top: 12px; right: 12px; z-index: 100;
-    background: rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 50%; width: 32px; height: 32px;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: rgba(0,0,0,0.4); transition: background 0.2s;
-  }
-  #settings-btn:hover { background: rgba(0,0,0,0.15); }
-
-  #settings-panel {
-    position: fixed; top: 0; right: 0; height: 100%; width: 260px;
-    background: #f0ece4; border-left: 1px solid rgba(0,0,0,0.1);
-    z-index: 99; transform: translateX(100%);
-    transition: transform 0.3s ease;
-    padding: 48px 20px 20px;
-    overflow-y: auto;
-  }
-  #settings-panel.open { transform: translateX(0); }
-
-  .setting-group { margin-bottom: 20px; }
-  .setting-label {
-    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
-    color: rgba(0,0,0,0.4); margin-bottom: 6px; display: block;
-  }
-  .setting-select {
-    width: 100%; padding: 7px 10px;
-    background: #fff; border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 6px; font-family: Georgia, serif; font-size: 12px;
-    color: #222; cursor: pointer; appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 10px center;
-  }
-  .setting-select:focus { outline: none; border-color: rgba(0,0,0,0.3); }
-
-  .settings-title {
-    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
-    color: rgba(0,0,0,0.3); margin-bottom: 24px;
-  }
-  .close-btn {
-    position: absolute; top: 14px; right: 14px;
-    background: none; border: none; font-size: 18px; cursor: pointer;
-    color: rgba(0,0,0,0.3); line-height: 1;
-  }
-
-  /* ── Main canvas ── */
-  #main-canvas { display: block; width: 100vw; height: 100vh; }
-
-  /* ── Day header ── */
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f5f2ec; }
+  canvas { display: block; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
   #day-header {
-    position: fixed; top: 0; left: 0; right: 0;
-    text-align: center; padding: 14px 0 10px;
-    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
-    color: rgba(0,0,0,0.28); pointer-events: none; z-index: 10;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    text-align: center; padding: 13px 0 10px;
+    font-family: Georgia, serif; font-size: 10px;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: rgba(0,0,0,0.28);
     border-bottom: 1px solid rgba(0,0,0,0.08);
-    display: none;
   }
-
-  /* ── Sprite overlay ── */
   #sprite-wrap {
     position: fixed; pointer-events: none; z-index: 20;
-    display: none;
   }
   #sprite-img {
     max-width: 180px; max-height: 220px;
     object-fit: contain;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.12));
   }
-
-  /* ── Watermark ── */
   #watermark {
-    position: fixed; bottom: 10px; right: 14px;
-    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: rgba(0,0,0,0.12); pointer-events: none; z-index: 10;
-  }
-  #fontname {
-    position: fixed; bottom: 22px; right: 14px;
-    font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
-    color: rgba(0,0,0,0.1); pointer-events: none; z-index: 10;
+    position: fixed; bottom: 10px; right: 14px; z-index: 20;
+    font-family: Georgia, serif; font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: rgba(0,0,0,0.12); pointer-events: none;
   }
 </style>
 </head>
 <body>
-
-<canvas id="main-canvas"></canvas>
-<div id="day-header"></div>
-<div id="sprite-wrap"><img id="sprite-img" src="" alt="" /></div>
+<canvas id="c"></canvas>
+<div id="day-header" style="display:none;"></div>
+<div id="sprite-wrap" style="display:none;"><img id="sprite-img" src="" alt="" /></div>
 <div id="watermark">Cozy Scenes</div>
-<div id="fontname"></div>
-
-<button id="settings-btn" onclick="toggleSettings()">⚙</button>
-
-<div id="settings-panel" id="settings-panel">
-  <button class="close-btn" onclick="toggleSettings()">✕</button>
-  <div class="settings-title">Space Time</div>
-
-  <div class="setting-group">
-    <span class="setting-label">Clock Font</span>
-    <select class="setting-select" id="sel-font" onchange="applySettings()">
-      <option value="random">Random</option>
-      <option value="Bebas Neue">Bebas Neue</option>
-      <option value="Abril Fatface">Abril Fatface</option>
-      <option value="Bangers">Bangers</option>
-      <option value="Pacifico">Pacifico</option>
-      <option value="Ultra">Ultra</option>
-      <option value="Alfa Slab One">Alfa Slab One</option>
-      <option value="Lobster">Lobster</option>
-      <option value="Press Start 2P">Press Start 2P</option>
-      <option value="Permanent Marker">Permanent Marker</option>
-      <option value="Cinzel">Cinzel</option>
-      <option value="Russo One">Russo One</option>
-      <option value="Boogaloo">Boogaloo</option>
-    </select>
-  </div>
-
-  <div class="setting-group">
-    <span class="setting-label">Day Header</span>
-    <select class="setting-select" id="sel-day" onchange="applySettings()">
-      <option value="none">Hidden</option>
-      <option value="show">Show — FRIDAY · APRIL 17</option>
-    </select>
-  </div>
-
-  <div class="setting-group">
-    <span class="setting-label">Sprite</span>
-    <select class="setting-select" id="sel-sprite" onchange="applySettings()">
-      <option value="none">None</option>
-      <option value="vibes">Cozy Daily Vibes</option>
-      <option value="waifu">Cozy Waifu</option>
-      <option value="random">Random</option>
-    </select>
-  </div>
-</div>
 
 <script>
 (function () {
+
+  // ── Read URL params (set by TRMNL liquid) ─────────────────────────────────
+  const params     = new URLSearchParams(location.search);
+  const P_FONT     = params.get('font')   || 'random';
+  const P_DAY      = params.get('day')    || 'off';
+  const P_SPRITE   = params.get('sprite') || 'none';
+  const P_ISH      = params.get('ish')    || 'off';
+  const P_OFFSET   = parseInt(params.get('offset')) || 0;
 
   // ── RNG ───────────────────────────────────────────────────────────────────
   function Rng(seed) {
     let s = seed >>> 0;
     return {
-      next()      { s ^= s << 13; s ^= s >>> 17; s ^= s << 5; return (s >>> 0) / 4294967296; },
-      range(a, b) { return a + this.next() * (b - a); },
-      int(a, b)   { return Math.floor(this.range(a, b + 1)); },
-      pick(arr)   { return arr[Math.floor(this.next() * arr.length)]; }
+      next()      { s ^= s<<13; s ^= s>>>17; s ^= s<<5; return (s>>>0)/4294967296; },
+      range(a,b)  { return a + this.next()*(b-a); },
+      pick(arr)   { return arr[Math.floor(this.next()*arr.length)]; }
     };
   }
+  const seed      = Date.now();
+  const rng       = Rng(seed);
+  const fontRng   = Rng((seed * 2654435761) >>> 0);
+  const spriteRng = Rng((seed * 1234567891) >>> 0);
 
   // ── Asset pools ───────────────────────────────────────────────────────────
-  const BASE_VIBES = 'https://raw.githubusercontent.com/CozyScenes/cozy-scenes-assets/main/dcm/backgrounds/';
+  const BASE_GH = 'https://raw.githubusercontent.com/CozyScenes/cozy-scenes-assets/main/dcm/backgrounds/';
   const SPRITES_VIBES = [
     '1qvms3','267upo','2essk1','3f6o5f','4yvyil','76gav3','7vkd2x',
     '86gv4h','ab0ffh','al3jar','au6908','bkm783','h4e3dd','hysrss',
     'iieief','kaf40m','nisa1k','ovs1kj','pjddph','qkhky2','sp3h2l'
-  ].map(id => BASE_VIBES + id + '.png');
+  ].map(id => BASE_GH + id + '.png');
 
   const BASE_CAT = 'https://files.catbox.moe/';
   const SPRITES_WAIFU = [
     'y2kh7h','mlj36k','mbkw8p','69e0m4','3myqdn','247civ','h4nsc4',
     '80b2tt','zz4n65','g8fdqb','l209q8','gkvvz5','bjhzqk','hqj1g4',
-    '6nsona','btr6ew','rmqrg7','oeitj4','z4gmjf',
-    'ryyjmf','ibx134','z3czkd','s9nqnu','x47bd1','8mft5j','p620sc',
-    'lgmndh','1j55cc','5q97kv','ozn8ji','vsjzs0','vbny4k','ce258p',
-    '4t6hrh','rewhkt','gh29m2','3w01c0'
+    '6nsona','btr6ew','rmqrg7','oeitj4','z4gmjf','ryyjmf','ibx134',
+    'z3czkd','s9nqnu','x47bd1','8mft5j','p620sc','lgmndh','1j55cc',
+    '5q97kv','ozn8ji','vsjzs0','vbny4k','ce258p','4t6hrh','rewhkt',
+    'gh29m2','3w01c0'
   ].map(id => BASE_CAT + id + '.png');
 
   // ── Fonts ─────────────────────────────────────────────────────────────────
   const FONTS = [
-    { family: 'Bebas Neue',       url: 'Bebas+Neue',                    weight: '400' },
-    { family: 'Abril Fatface',    url: 'Abril+Fatface',                 weight: '400' },
-    { family: 'Bangers',          url: 'Bangers',                       weight: '400' },
-    { family: 'Pacifico',         url: 'Pacifico',                      weight: '400' },
-    { family: 'Ultra',            url: 'Ultra',                         weight: '400' },
-    { family: 'Alfa Slab One',    url: 'Alfa+Slab+One',                 weight: '400' },
-    { family: 'Lobster',          url: 'Lobster',                       weight: '400' },
-    { family: 'Press Start 2P',   url: 'Press+Start+2P',                weight: '400' },
-    { family: 'Permanent Marker', url: 'Permanent+Marker',              weight: '400' },
-    { family: 'Cinzel',           url: 'Cinzel:wght@900',               weight: '900' },
-    { family: 'Russo One',        url: 'Russo+One',                     weight: '400' },
-    { family: 'Boogaloo',         url: 'Boogaloo',                      weight: '400' },
+    { family: 'Bebas Neue',       url: 'Bebas+Neue',           weight: '400' },
+    { family: 'Abril Fatface',    url: 'Abril+Fatface',         weight: '400' },
+    { family: 'Bangers',          url: 'Bangers',               weight: '400' },
+    { family: 'Pacifico',         url: 'Pacifico',              weight: '400' },
+    { family: 'Ultra',            url: 'Ultra',                 weight: '400' },
+    { family: 'Alfa Slab One',    url: 'Alfa+Slab+One',         weight: '400' },
+    { family: 'Lobster',          url: 'Lobster',               weight: '400' },
+    { family: 'Press Start 2P',   url: 'Press+Start+2P',        weight: '400' },
+    { family: 'Permanent Marker', url: 'Permanent+Marker',      weight: '400' },
+    { family: 'Cinzel',           url: 'Cinzel:wght@900',       weight: '900' },
+    { family: 'Russo One',        url: 'Russo+One',             weight: '400' },
+    { family: 'Boogaloo',         url: 'Boogaloo',              weight: '400' },
   ];
   const FONT_MAP = {};
   FONTS.forEach(f => FONT_MAP[f.family] = f);
@@ -209,160 +116,156 @@
   ];
 
   // ── Canvas ────────────────────────────────────────────────────────────────
-  const canvas = document.getElementById('main-canvas');
+  const canvas = document.getElementById('c');
   const ctx    = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
   const W = canvas.width, H = canvas.height;
 
-  // ── Session RNG (stable per page load) ───────────────────────────────────
-  const seed     = Date.now();
-  const rng      = Rng(seed);
-  const fontRng  = Rng((seed * 2654435761) >>> 0);
+  // ── Session picks (stable per load) ──────────────────────────────────────
+  const pal       = rng.pick(PALETTES);
+  const patType   = rng.pick(PATTERNS);
+  const tileSize  = rng.pick([18, 24, 32, 44, 56, 72, 88]);
+  const rotation  = rng.range(0, Math.PI * 2);
+  const useAccent = rng.next() > 0.6;
+  const jitter    = rng.next() > 0.7;
+  const borderW   = rng.next() > 0.6 ? rng.range(0.5, 2.0) : 0;
 
-  const pal        = rng.pick(PALETTES);
-  const patType    = rng.pick(PATTERNS);
-  const tileSize   = rng.pick([18, 24, 32, 44, 56, 72, 88]);
-  const rotation   = rng.range(0, Math.PI * 2);
-  const useAccent  = rng.next() > 0.6;
-  const jitter     = rng.next() > 0.7;
-  const borderW    = rng.next() > 0.6 ? rng.range(0.5, 2.0) : 0;
-  const randFont   = fontRng.pick(FONTS);
-
-  // Sprite position picked once per load
-  const spriteRng    = Rng((seed * 1234567891) >>> 0);
-  const spriteAbove  = spriteRng.next() > 0.5;           // above or below clock
+  // sprite placement
+  const spriteAbove  = spriteRng.next() > 0.5;
   const spriteHAlign = spriteRng.pick(['left','center','right']);
 
-  // ── Load settings from localStorage ──────────────────────────────────────
-  function getSettings() {
-    return {
-      font:   localStorage.getItem('st_font')   || 'random',
-      day:    localStorage.getItem('st_day')    || 'none',
-      sprite: localStorage.getItem('st_sprite') || 'none',
-    };
-  }
-
-  // ── Resolve chosen font ───────────────────────────────────────────────────
-  function resolveFont(setting) {
-    if (setting === 'random') return randFont;
-    return FONT_MAP[setting] || randFont;
-  }
+  // ── Resolve font ──────────────────────────────────────────────────────────
+  // TRMNL slugifies option values, build a slug map too
+  const FONT_SLUG_MAP = {};
+  FONTS.forEach(f => { FONT_SLUG_MAP[f.family.toLowerCase().replace(/ /g,'_')] = f; });
+  const fontObj = (P_FONT === 'random' || P_FONT === '' || (!FONT_MAP[P_FONT] && !FONT_SLUG_MAP[P_FONT]))
+    ? fontRng.pick(FONTS)
+    : (FONT_MAP[P_FONT] || FONT_SLUG_MAP[P_FONT]);
 
   // ── Day header ────────────────────────────────────────────────────────────
-  function buildDayHeader() {
-    const _offsetSec = parseInt(new URLSearchParams(location.search).get("offset")) || 0;
-    const now = new Date(new Date().valueOf() + _offsetSec * 1000);
-    const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['January','February','March','April','May','June',
+  if (P_DAY === 'on' || P_DAY === 'true') {
+    const now2   = new Date(Date.now() + P_OFFSET * 1000);
+    const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const MONTHS = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
-    return days[now.getDay()] + ' · ' + months[now.getMonth()] + ' ' + now.getDate();
+    const hdr = document.getElementById('day-header');
+    hdr.textContent = DAYS[now2.getUTCDay()] + ' · ' + MONTHS[now2.getUTCMonth()] + ' ' + now2.getUTCDate();
+    hdr.style.display = 'block';
   }
 
-  // ── Sprite display ────────────────────────────────────────────────────────
-  function showSprite(setting) {
+  // ── Sprite ────────────────────────────────────────────────────────────────
+  if (P_SPRITE && P_SPRITE !== 'none' && P_SPRITE !== '') {
+    let pool;
+    if (P_SPRITE === 'vibes' || P_SPRITE === 'cozy_daily_vibes')  pool = SPRITES_VIBES;
+    else if (P_SPRITE === 'waifu' || P_SPRITE === 'cozy_waifu') pool = SPRITES_WAIFU;
+    else pool = spriteRng.next() > 0.5 ? SPRITES_VIBES : SPRITES_WAIFU;
+
+    const url  = spriteRng.pick(pool);
     const wrap = document.getElementById('sprite-wrap');
     const img  = document.getElementById('sprite-img');
-
-    let pool = null;
-    if (setting === 'vibes')  pool = SPRITES_VIBES;
-    if (setting === 'waifu')  pool = SPRITES_WAIFU;
-    if (setting === 'random') pool = spriteRng.next() > 0.5 ? SPRITES_VIBES : SPRITES_WAIFU;
-    if (!pool) { wrap.style.display = 'none'; return; }
-
-    const url = spriteRng.pick(pool);
     img.src = url;
     wrap.style.display = 'block';
 
-    // Position: above or below clock, left/center/right
-    const clockY    = H / 2;
-    const imgH      = 200;
-    const topPos    = spriteAbove ? clockY - imgH - 60 : clockY + 80;
-    let   leftPos;
+    const imgH   = 200;
+    const clockY = H / 2;
+    const topPos = spriteAbove ? clockY - imgH - 60 : clockY + 80;
+    let leftPos;
     if (spriteHAlign === 'left')   leftPos = W * 0.05;
     if (spriteHAlign === 'center') leftPos = (W - 180) / 2;
     if (spriteHAlign === 'right')  leftPos = W * 0.95 - 180;
-
-    wrap.style.top    = Math.max(0, topPos) + 'px';
+    wrap.style.top    = Math.max(10, topPos) + 'px';
     wrap.style.left   = leftPos + 'px';
     wrap.style.width  = '180px';
     wrap.style.height = imgH + 'px';
   }
 
-  // ── Main draw ─────────────────────────────────────────────────────────────
-  function drawClock(fontObj) {
-    // blank bg
+  // ── Load font then draw ───────────────────────────────────────────────────
+  const link = document.createElement('link');
+  link.rel  = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=' + fontObj.url + '&display=swap';
+  document.head.appendChild(link);
+
+  document.fonts.load(fontObj.weight + ' 40px \'' + fontObj.family + '\'')
+    .then(drawAll).catch(drawAll);
+
+  // ── Draw everything ───────────────────────────────────────────────────────
+  function drawAll() {
+
+    // 1. blank bg
     ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // offscreen pattern
+    // 2. offscreen pattern
     const off = document.createElement('canvas');
     off.width = W; off.height = H;
-    const oc = off.getContext('2d');
-
+    const oc  = off.getContext('2d');
     oc.save();
-    oc.translate(W / 2, H / 2);
+    oc.translate(W/2, H/2);
     oc.rotate(rotation);
-    const diag = Math.ceil(Math.sqrt(W * W + H * H));
-    const ox = -diag / 2, oy = -diag / 2;
-    const cols = Math.ceil(diag / tileSize) + 2;
-    const rows = Math.ceil(diag / tileSize) + 2;
+    const diag = Math.ceil(Math.sqrt(W*W + H*H));
+    const ox = -diag/2, oy = -diag/2;
+    const cols = Math.ceil(diag/tileSize) + 2;
+    const rows = Math.ceil(diag/tileSize) + 2;
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        const x    = ox + col * tileSize;
-        const y    = oy + row * tileSize;
-        const even = (row + col) % 2 === 0;
-        const ts   = jitter ? tileSize + rng.range(-tileSize * 0.08, tileSize * 0.08) : tileSize;
+        const x    = ox + col*tileSize;
+        const y    = oy + row*tileSize;
+        const even = (row+col) % 2 === 0;
+        const ts   = jitter ? tileSize + rng.range(-tileSize*0.08, tileSize*0.08) : tileSize;
         oc.fillStyle = even ? pal.bg : pal.fg;
-        oc.fillRect(ox + col * tileSize, oy + row * tileSize, ts, ts);
-        const fill = (useAccent && rng.next() > 0.88) ? pal.accent : (even ? pal.fg : pal.bg);
+        oc.fillRect(ox + col*tileSize, oy + row*tileSize, ts, ts);
+        const fill = (useAccent && rng.next()>0.88) ? pal.accent : (even ? pal.fg : pal.bg);
         oc.save();
-        oc.translate(x + tileSize / 2, y + tileSize / 2);
+        oc.translate(x + tileSize/2, y + tileSize/2);
         drawTile(oc, patType, ts, fill, pal, rng, even, borderW);
         oc.restore();
       }
     }
     oc.restore();
 
-    // time
-    const now    = new Date(new Date().valueOf() + _offsetSec * 1000);
-    const hh     = now.getHours();
-    const mm     = String(now.getMinutes()).padStart(2, '0');
-    const ampm   = hh >= 12 ? 'pm' : 'am';
-    const h12    = hh % 12 || 12;
-    const timeStr   = h12 + ':' + mm;
-    const periodStr = ampm;
+    // 3. time string
+    const now     = new Date(Date.now() + P_OFFSET * 1000);
+    const hh      = now.getUTCHours();
+    const mm      = String(now.getUTCMinutes()).padStart(2, '0');
+    const ampm    = hh >= 12 ? 'pm' : 'am';
+    const h12     = hh % 12 || 12;
+    const ishStr  = (P_ISH === 'on' || P_ISH === 'true') ? 'ish' : '';
+    const timeStr = h12 + ':' + mm;
+    const suffStr = ' ' + ampm + (ishStr ? ' ' + ishStr : '');
 
+    // 4. font sizes
     const fontSize  = Math.min(W * 0.30, H * 0.44);
-    const weight    = fontObj.weight;
     const fam       = "'" + fontObj.family + "', Georgia, serif";
-    const mainFont  = weight + ' ' + fontSize + 'px ' + fam;
-    const smallSize = fontSize * 0.26;
-    const smallFont = weight + ' ' + smallSize + 'px ' + fam;
+    const mainFont  = fontObj.weight + ' ' + fontSize + 'px ' + fam;
+    const smallSize = fontSize * 0.24;
+    const smallFont = fontObj.weight + ' ' + smallSize + 'px ' + fam;
 
-    const measure = document.createElement('canvas').getContext('2d');
-    measure.font = mainFont;
-    const mainW  = measure.measureText(timeStr).width;
-    measure.font = smallFont;
-    const smallW = measure.measureText(periodStr).width;
-    const gap    = fontSize * 0.06;
-    const startX = (W - mainW - gap - smallW) / 2;
+    // measure to center group
+    const mCtx = document.createElement('canvas').getContext('2d');
+    mCtx.font  = mainFont;
+    const mainW  = mCtx.measureText(timeStr).width;
+    mCtx.font  = smallFont;
+    const suffW  = mCtx.measureText(suffStr).width;
+    const gap    = fontSize * 0.05;
+    const totalW = mainW + gap + suffW;
+    const startX = (W - totalW) / 2;
     const centerY = H / 2;
 
-    // mask
+    // 5. text mask
     const mask = document.createElement('canvas');
     mask.width = W; mask.height = H;
-    const mc = mask.getContext('2d');
+    const mc   = mask.getContext('2d');
     mc.fillStyle = '#000';
     mc.font = mainFont;
     mc.textAlign = 'left';
     mc.textBaseline = 'middle';
     mc.fillText(timeStr, startX, centerY);
     mc.font = smallFont;
-    mc.fillText(periodStr, startX + mainW + gap, centerY + fontSize * 0.16);
+    mc.fillText(suffStr, startX + mainW + gap, centerY + fontSize * 0.14);
 
-    // composite
+    // 6. composite pattern into text
     const result = document.createElement('canvas');
     result.width = W; result.height = H;
     const rc = result.getContext('2d');
@@ -372,7 +275,7 @@
 
     ctx.drawImage(result, 0, 0);
 
-    // outline
+    // 7. outline
     ctx.save();
     ctx.strokeStyle = pal.fg;
     ctx.lineWidth   = Math.max(1.5, fontSize * 0.007);
@@ -381,132 +284,67 @@
     ctx.textAlign   = 'left';
     ctx.textBaseline = 'middle';
     ctx.strokeText(timeStr, startX, centerY);
-    ctx.font        = smallFont;
-    ctx.strokeText(periodStr, startX + mainW + gap, centerY + fontSize * 0.16);
+    ctx.font = smallFont;
+    ctx.strokeText(suffStr, startX + mainW + gap, centerY + fontSize * 0.14);
     ctx.restore();
-
-    document.getElementById('fontname').textContent = fontObj.family;
   }
-
-  // ── Apply all settings ────────────────────────────────────────────────────
-  window.applySettings = function() {
-    const s = getSettings();
-    // read current dropdown values if panel is open
-    const selFont   = document.getElementById('sel-font');
-    const selDay    = document.getElementById('sel-day');
-    const selSprite = document.getElementById('sel-sprite');
-    if (selFont)   { localStorage.setItem('st_font',   selFont.value);   s.font   = selFont.value; }
-    if (selDay)    { localStorage.setItem('st_day',    selDay.value);    s.day    = selDay.value; }
-    if (selSprite) { localStorage.setItem('st_sprite', selSprite.value); s.sprite = selSprite.value; }
-
-    // day header
-    const header = document.getElementById('day-header');
-    if (s.day === 'show') {
-      header.textContent = buildDayHeader();
-      header.style.display = 'block';
-    } else {
-      header.style.display = 'none';
-    }
-
-    // sprite
-    showSprite(s.sprite);
-
-    // font — load then draw
-    const fontObj = resolveFont(s.font);
-    const link = document.getElementById('gfont-link') || document.createElement('link');
-    link.id  = 'gfont-link';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=' + fontObj.url + '&display=swap';
-    if (!link.parentNode) document.head.appendChild(link);
-
-    document.fonts.load(fontObj.weight + ' 40px \'' + fontObj.family + '\'')
-      .then(() => drawClock(fontObj)).catch(() => drawClock(fontObj));
-  };
-
-  // ── Settings panel toggle ─────────────────────────────────────────────────
-  window.toggleSettings = function() {
-    const panel = document.getElementById('settings-panel');
-    panel.classList.toggle('open');
-    // sync dropdowns to current saved values
-    if (panel.classList.contains('open')) {
-      const s = getSettings();
-      document.getElementById('sel-font').value   = s.font;
-      document.getElementById('sel-day').value    = s.day;
-      document.getElementById('sel-sprite').value = s.sprite;
-    }
-  };
-
-  // ── Init ──────────────────────────────────────────────────────────────────
-  applySettings();
 
   // ── Tile drawing ──────────────────────────────────────────────────────────
   function drawTile(ctx, type, ts, fill, pal, rng, even, bw) {
-    const h = ts / 2;
-    switch (type) {
+    const h = ts/2;
+    switch(type) {
       case 'checker':
-        if (!even) { ctx.fillStyle = fill; ctx.fillRect(-h,-h,ts,ts); } break;
+        if (!even){ctx.fillStyle=fill;ctx.fillRect(-h,-h,ts,ts);} break;
       case 'diamond':
-        ctx.fillStyle = fill; ctx.beginPath();
-        ctx.moveTo(0,-h); ctx.lineTo(h,0); ctx.lineTo(0,h); ctx.lineTo(-h,0);
-        ctx.closePath(); ctx.fill(); break;
+        ctx.fillStyle=fill;ctx.beginPath();
+        ctx.moveTo(0,-h);ctx.lineTo(h,0);ctx.lineTo(0,h);ctx.lineTo(-h,0);
+        ctx.closePath();ctx.fill();break;
       case 'houndstooth':
-        ctx.fillStyle = fill; ctx.beginPath();
-        if (even) { ctx.moveTo(-h,-h); ctx.lineTo(h,-h); ctx.lineTo(-h,h); }
-        else       { ctx.moveTo(h,h);  ctx.lineTo(-h,h); ctx.lineTo(h,-h); }
-        ctx.closePath(); ctx.fill();
-        if (even) {
-          ctx.fillStyle = pal.fg; ctx.beginPath();
-          ctx.moveTo(0,-h); ctx.lineTo(h,-h); ctx.lineTo(h,0); ctx.closePath(); ctx.fill();
-        }
+        ctx.fillStyle=fill;ctx.beginPath();
+        if(even){ctx.moveTo(-h,-h);ctx.lineTo(h,-h);ctx.lineTo(-h,h);}
+        else    {ctx.moveTo(h,h); ctx.lineTo(-h,h);ctx.lineTo(h,-h);}
+        ctx.closePath();ctx.fill();
+        if(even){ctx.fillStyle=pal.fg;ctx.beginPath();ctx.moveTo(0,-h);ctx.lineTo(h,-h);ctx.lineTo(h,0);ctx.closePath();ctx.fill();}
         break;
       case 'stripes_h':
-        ctx.fillStyle = fill; ctx.fillRect(-h,-h*0.5,ts,ts*0.5); break;
+        ctx.fillStyle=fill;ctx.fillRect(-h,-h*0.5,ts,ts*0.5);break;
       case 'stripes_v':
-        ctx.fillStyle = fill; ctx.fillRect(-h*0.5,-h,ts*0.5,ts); break;
+        ctx.fillStyle=fill;ctx.fillRect(-h*0.5,-h,ts*0.5,ts);break;
       case 'stripes_diag':
-        ctx.fillStyle = fill; ctx.save(); ctx.rotate(Math.PI/4);
-        ctx.fillRect(-h*0.4,-h*1.5,ts*0.4,ts*1.5); ctx.restore(); break;
+        ctx.fillStyle=fill;ctx.save();ctx.rotate(Math.PI/4);
+        ctx.fillRect(-h*0.4,-h*1.5,ts*0.4,ts*1.5);ctx.restore();break;
       case 'dots':
-        ctx.fillStyle = fill; ctx.beginPath();
-        ctx.arc(0,0,h*0.58,0,Math.PI*2); ctx.fill(); break;
+        ctx.fillStyle=fill;ctx.beginPath();ctx.arc(0,0,h*0.58,0,Math.PI*2);ctx.fill();break;
       case 'triangles':
-        ctx.fillStyle = fill; ctx.beginPath();
-        if (even) { ctx.moveTo(0,-h); ctx.lineTo(h,h);  ctx.lineTo(-h,h);  }
-        else       { ctx.moveTo(0,h);  ctx.lineTo(h,-h); ctx.lineTo(-h,-h); }
-        ctx.closePath(); ctx.fill(); break;
+        ctx.fillStyle=fill;ctx.beginPath();
+        if(even){ctx.moveTo(0,-h);ctx.lineTo(h,h); ctx.lineTo(-h,h); }
+        else    {ctx.moveTo(0,h); ctx.lineTo(h,-h);ctx.lineTo(-h,-h);}
+        ctx.closePath();ctx.fill();break;
       case 'hexagons':
-        ctx.fillStyle = fill; ctx.beginPath();
-        for (let i=0;i<6;i++) {
-          const a=(Math.PI/3)*i-Math.PI/6;
-          i===0 ? ctx.moveTo(Math.cos(a)*h*0.9,Math.sin(a)*h*0.9)
-                : ctx.lineTo(Math.cos(a)*h*0.9,Math.sin(a)*h*0.9);
-        }
-        ctx.closePath(); ctx.fill();
-        if (bw>0){ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;ctx.stroke();}
-        break;
+        ctx.fillStyle=fill;ctx.beginPath();
+        for(let i=0;i<6;i++){const a=(Math.PI/3)*i-Math.PI/6;
+          i===0?ctx.moveTo(Math.cos(a)*h*0.9,Math.sin(a)*h*0.9):ctx.lineTo(Math.cos(a)*h*0.9,Math.sin(a)*h*0.9);}
+        ctx.closePath();ctx.fill();
+        if(bw>0){ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;ctx.stroke();}break;
       case 'zigzag':
-        ctx.fillStyle = fill; ctx.beginPath();
-        if (even) { ctx.moveTo(-h,-h);ctx.lineTo(0,0);ctx.lineTo(h,-h);ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h); }
-        else       { ctx.moveTo(-h,0); ctx.lineTo(0,-h);ctx.lineTo(h,0); ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h); }
-        ctx.closePath(); ctx.fill(); break;
-      case 'cross': {
-        const arm=ts*0.28; ctx.fillStyle=fill;
-        ctx.fillRect(-arm,-h,arm*2,ts); ctx.fillRect(-h,-arm,ts,arm*2); break;
-      }
+        ctx.fillStyle=fill;ctx.beginPath();
+        if(even){ctx.moveTo(-h,-h);ctx.lineTo(0,0);ctx.lineTo(h,-h);ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
+        else    {ctx.moveTo(-h,0); ctx.lineTo(0,-h);ctx.lineTo(h,0); ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
+        ctx.closePath();ctx.fill();break;
+      case 'cross':{
+        const arm=ts*0.28;ctx.fillStyle=fill;
+        ctx.fillRect(-arm,-h,arm*2,ts);ctx.fillRect(-h,-arm,ts,arm*2);break;}
       case 'woven':
         ctx.fillStyle=fill;
-        if (even) ctx.fillRect(-h,-h*0.38,ts,ts*0.38);
-        else      ctx.fillRect(-h*0.38,-h,ts*0.38,ts);
-        if (bw>0){
-          ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;
+        if(even) ctx.fillRect(-h,-h*0.38,ts,ts*0.38);
+        else     ctx.fillRect(-h*0.38,-h,ts*0.38,ts);
+        if(bw>0){ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;
           if(even) ctx.strokeRect(-h,-h*0.38,ts,ts*0.38);
-          else     ctx.strokeRect(-h*0.38,-h,ts*0.38,ts);
-        }
+          else     ctx.strokeRect(-h*0.38,-h,ts*0.38,ts);}
         break;
     }
-    if (bw>0 && type!=='hexagons' && type!=='woven') {
-      ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;ctx.strokeRect(-h,-h,ts,ts);
-    }
+    if(bw>0&&type!=='hexagons'&&type!=='woven'){
+      ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;ctx.strokeRect(-h,-h,ts,ts);}
   }
 
 })();
