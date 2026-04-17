@@ -129,7 +129,7 @@
     const ampm  = hh >= 12 ? 'pm' : 'am';
     const h12   = hh % 12 || 12;
     const timeStr = h12 + ':' + mm;
-    const suffStr = ' ' + ampm + (showIsh ? ' ish' : '');
+    const suffStr = ' ' + ampm + (showIsh ? ' ish...' : '');
 
     const fontSize  = Math.min(W * 0.30, H * 0.44);
     const fam       = "'" + fontObj.family + "', Georgia, serif";
