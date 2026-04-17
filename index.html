@@ -110,16 +110,16 @@
       <option value="random">Random</option>
       <option value="Bebas Neue">Bebas Neue</option>
       <option value="Abril Fatface">Abril Fatface</option>
-      <option value="Righteous">Righteous</option>
-      <option value="Titan One">Titan One</option>
-      <option value="Secular One">Secular One</option>
+      <option value="Bangers">Bangers</option>
+      <option value="Pacifico">Pacifico</option>
+      <option value="Ultra">Ultra</option>
+      <option value="Alfa Slab One">Alfa Slab One</option>
+      <option value="Lobster">Lobster</option>
+      <option value="Press Start 2P">Press Start 2P</option>
+      <option value="Permanent Marker">Permanent Marker</option>
+      <option value="Cinzel">Cinzel</option>
+      <option value="Russo One">Russo One</option>
       <option value="Boogaloo">Boogaloo</option>
-      <option value="Fredoka One">Fredoka One</option>
-      <option value="Squada One">Squada One</option>
-      <option value="Black Ops One">Black Ops One</option>
-      <option value="Lilita One">Lilita One</option>
-      <option value="Playfair Display">Playfair Display</option>
-      <option value="Oswald">Oswald</option>
     </select>
   </div>
 
@@ -176,18 +176,18 @@
 
   // ── Fonts ─────────────────────────────────────────────────────────────────
   const FONTS = [
-    { family: 'Bebas Neue',       url: 'Bebas+Neue',                weight: '400' },
-    { family: 'Abril Fatface',    url: 'Abril+Fatface',             weight: '400' },
-    { family: 'Righteous',        url: 'Righteous',                 weight: '400' },
-    { family: 'Titan One',        url: 'Titan+One',                 weight: '400' },
-    { family: 'Secular One',      url: 'Secular+One',               weight: '400' },
-    { family: 'Boogaloo',         url: 'Boogaloo',                  weight: '400' },
-    { family: 'Fredoka One',      url: 'Fredoka+One',               weight: '400' },
-    { family: 'Squada One',       url: 'Squada+One',                weight: '400' },
-    { family: 'Black Ops One',    url: 'Black+Ops+One',             weight: '400' },
-    { family: 'Lilita One',       url: 'Lilita+One',                weight: '400' },
-    { family: 'Playfair Display', url: 'Playfair+Display:wght@900', weight: '900' },
-    { family: 'Oswald',           url: 'Oswald:wght@700',           weight: '700' },
+    { family: 'Bebas Neue',       url: 'Bebas+Neue',                    weight: '400' },
+    { family: 'Abril Fatface',    url: 'Abril+Fatface',                 weight: '400' },
+    { family: 'Bangers',          url: 'Bangers',                       weight: '400' },
+    { family: 'Pacifico',         url: 'Pacifico',                      weight: '400' },
+    { family: 'Ultra',            url: 'Ultra',                         weight: '400' },
+    { family: 'Alfa Slab One',    url: 'Alfa+Slab+One',                 weight: '400' },
+    { family: 'Lobster',          url: 'Lobster',                       weight: '400' },
+    { family: 'Press Start 2P',   url: 'Press+Start+2P',                weight: '400' },
+    { family: 'Permanent Marker', url: 'Permanent+Marker',              weight: '400' },
+    { family: 'Cinzel',           url: 'Cinzel:wght@900',               weight: '900' },
+    { family: 'Russo One',        url: 'Russo+One',                     weight: '400' },
+    { family: 'Boogaloo',         url: 'Boogaloo',                      weight: '400' },
   ];
   const FONT_MAP = {};
   FONTS.forEach(f => FONT_MAP[f.family] = f);
@@ -251,7 +251,8 @@
 
   // ── Day header ────────────────────────────────────────────────────────────
   function buildDayHeader() {
-    const now = new Date();
+    const _offsetSec = parseInt(new URLSearchParams(location.search).get("offset")) || 0;
+    const now = new Date(new Date().valueOf() + _offsetSec * 1000);
     const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['January','February','March','April','May','June',
                     'July','August','September','October','November','December'];
@@ -325,7 +326,7 @@
     oc.restore();
 
     // time
-    const now    = new Date();
+    const now    = new Date(new Date().valueOf() + _offsetSec * 1000);
     const hh     = now.getHours();
     const mm     = String(now.getMinutes()).padStart(2, '0');
     const ampm   = hh >= 12 ? 'pm' : 'am';
