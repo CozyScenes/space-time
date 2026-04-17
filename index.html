@@ -43,7 +43,7 @@
 
   // ── Read URL params (set by TRMNL liquid) ─────────────────────────────────
   const params     = new URLSearchParams(location.search);
-  const P_FONT     = params.get('font')   || 'random';
+  const P_FONT     = 'random';
   const P_DAY      = params.get('day')    || 'off';
   const P_SPRITE   = params.get('sprite') || 'none';
   const P_ISH      = params.get('ish')    || 'off';
@@ -231,7 +231,7 @@
     const mm      = String(now.getUTCMinutes()).padStart(2, '0');
     const ampm    = hh >= 12 ? 'pm' : 'am';
     const h12     = hh % 12 || 12;
-    const ishStr  = (P_ISH === 'on' || P_ISH === 'true') ? 'ish' : '';
+    const ishStr  = (P_ISH === 'on' || P_ISH === 'true' || P_ISH === true || P_ISH === '1') ? 'ish' : '';
     const timeStr = h12 + ':' + mm;
     const suffStr = ' ' + ampm + (ishStr ? ' ' + ishStr : '');
 
