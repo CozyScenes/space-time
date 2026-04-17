@@ -8,80 +8,42 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #f5f2ec; }
   canvas { display: block; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
-  #day-header {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-    text-align: center; padding: 13px 0 10px;
-    font-family: Georgia, serif; font-size: 10px;
-    letter-spacing: 0.22em; text-transform: uppercase;
-    color: rgba(0,0,0,0.28);
-    border-bottom: 1px solid rgba(0,0,0,0.08);
-  }
-  #watermark {
-    position: fixed; bottom: 10px; right: 14px; z-index: 20;
-    font-family: Georgia, serif; font-size: 9px;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: rgba(0,0,0,0.12); pointer-events: none;
-  }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="day-header" style="display:none;"></div>
-<div id="weather-bar" style="display:none; position:fixed; bottom:28px; left:0; right:0; z-index:20; padding:0 5%; justify-content:space-between; pointer-events:none;">
-  <span id="weather-left"  style="font-family:Georgia,serif; font-size:12px; letter-spacing:0.08em; color:rgba(0,0,0,0.35);"></span>
-  <span id="weather-right" style="font-family:Georgia,serif; font-size:12px; letter-spacing:0.08em; color:rgba(0,0,0,0.35);"></span>
-</div>
-<div id="watermark">Cozy Scenes</div>
-
 <script>
 (function () {
 
-  // ── Read URL params (set by TRMNL liquid) ─────────────────────────────────
-  const params     = new URLSearchParams(location.search);
-  const P_FONT     = 'random';
-  const P_DAY      = params.get('day')    || 'off';
-  const P_ISH      = params.get('ish')    || 'off';
-  const P_OFFSET   = parseInt(params.get('offset')) || 0;
-  const P_WEATHER  = params.get('weather') || 'false';
-  const P_TEMPUNIT = params.get('temp_unit') || 'fahrenheit';
-  const P_CITY     = params.get('city') || '';
-  const P_WTTR_TEMP   = params.get('wttr_temp') || '';
-  const P_WTTR_COND   = params.get('wttr_cond') || '';
-
-  // ── RNG ───────────────────────────────────────────────────────────────────
   function Rng(seed) {
     let s = seed >>> 0;
     return {
-      next()      { s ^= s<<13; s ^= s>>>17; s ^= s<<5; return (s>>>0)/4294967296; },
-      range(a,b)  { return a + this.next()*(b-a); },
-      pick(arr)   { return arr[Math.floor(this.next()*arr.length)]; },
-      int(a,b)    { return Math.floor(this.range(a, b + 1)); }
+      next()     { s ^= s<<13; s ^= s>>>17; s ^= s<<5; return (s>>>0)/4294967296; },
+      range(a,b) { return a + this.next()*(b-a); },
+      int(a,b)   { return Math.floor(this.range(a, b+1)); },
+      pick(arr)  { return arr[Math.floor(this.next()*arr.length)]; }
     };
   }
-  const seed      = Date.now();
-  const rng       = Rng(seed);
-  const fontRng   = Rng((seed * 2654435761) >>> 0);
 
-  // ── Asset pools ───────────────────────────────────────────────────────────
-  // ── Fonts ─────────────────────────────────────────────────────────────────
+  const seed    = Date.now();
+  const rng     = Rng(seed);
+  const fontRng = Rng((seed * 2654435761) >>> 0);
+
   const FONTS = [
-    { family: 'Bebas Neue',       url: 'Bebas+Neue',           weight: '400' },
-    { family: 'Abril Fatface',    url: 'Abril+Fatface',         weight: '400' },
-    { family: 'Bangers',          url: 'Bangers',               weight: '400' },
-    { family: 'Pacifico',         url: 'Pacifico',              weight: '400' },
-    { family: 'Ultra',            url: 'Ultra',                 weight: '400' },
-    { family: 'Alfa Slab One',    url: 'Alfa+Slab+One',         weight: '400' },
-    { family: 'Lobster',          url: 'Lobster',               weight: '400' },
-    { family: 'Press Start 2P',   url: 'Press+Start+2P',        weight: '400' },
-    { family: 'Permanent Marker', url: 'Permanent+Marker',      weight: '400' },
-    { family: 'Cinzel',           url: 'Cinzel:wght@900',       weight: '900' },
-    { family: 'Russo One',        url: 'Russo+One',             weight: '400' },
-    { family: 'Boogaloo',         url: 'Boogaloo',              weight: '400' },
+    { family: 'Bebas Neue',       url: 'Bebas+Neue',       weight: '400' },
+    { family: 'Abril Fatface',    url: 'Abril+Fatface',    weight: '400' },
+    { family: 'Bangers',          url: 'Bangers',          weight: '400' },
+    { family: 'Pacifico',         url: 'Pacifico',         weight: '400' },
+    { family: 'Ultra',            url: 'Ultra',            weight: '400' },
+    { family: 'Alfa Slab One',    url: 'Alfa+Slab+One',    weight: '400' },
+    { family: 'Lobster',          url: 'Lobster',          weight: '400' },
+    { family: 'Press Start 2P',   url: 'Press+Start+2P',   weight: '400' },
+    { family: 'Permanent Marker', url: 'Permanent+Marker', weight: '400' },
+    { family: 'Cinzel',           url: 'Cinzel:wght@900',  weight: '900' },
+    { family: 'Russo One',        url: 'Russo+One',        weight: '400' },
+    { family: 'Boogaloo',         url: 'Boogaloo',         weight: '400' },
   ];
-  const FONT_MAP = {};
-  FONTS.forEach(f => FONT_MAP[f.family] = f);
 
-  // ── Palettes + Patterns ───────────────────────────────────────────────────
   const PALETTES = [
     { bg: '#f5f2ec', fg: '#1a1a1a', accent: '#8c8c8c' },
     { bg: '#e8e4dc', fg: '#2a2a2a', accent: '#aaa49a' },
@@ -92,104 +54,46 @@
     { bg: '#f5f2ec', fg: '#555',    accent: '#bbb'     },
     { bg: '#111',    fg: '#ddd',    accent: '#555'     },
   ];
+
   const PATTERNS = [
     'checker','diamond','houndstooth','stripes_h','stripes_v',
     'stripes_diag','dots','triangles','hexagons','zigzag','cross','woven',
   ];
 
-  // ── Canvas ────────────────────────────────────────────────────────────────
   const canvas = document.getElementById('c');
   const ctx    = canvas.getContext('2d');
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
   const W = canvas.width, H = canvas.height;
 
-  // ── Session picks (stable per load) ──────────────────────────────────────
-  const pal       = rng.pick(PALETTES);
-  const patType   = rng.pick(PATTERNS);
-  const tileSize  = rng.pick([18, 24, 32, 44, 56, 72, 88]);
-  const rotation  = rng.range(0, Math.PI * 2);
+  const pal      = rng.pick(PALETTES);
+  const patType  = rng.pick(PATTERNS);
+  const tileSize = rng.pick([18, 24, 32, 44, 56, 72, 88]);
+  const rotation = rng.range(0, Math.PI * 2);
   const useAccent = rng.next() > 0.6;
   const jitter    = rng.next() > 0.7;
   const borderW   = rng.next() > 0.6 ? rng.range(0.5, 2.0) : 0;
+  const fontObj   = fontRng.pick(FONTS);
 
-  // ── Resolve font ──────────────────────────────────────────────────────────
-  // TRMNL slugifies option values, build a slug map too
-  const FONT_SLUG_MAP = {};
-  FONTS.forEach(f => { FONT_SLUG_MAP[f.family.toLowerCase().replace(/ /g,'_')] = f; });
-  const fontObj = (P_FONT === 'random' || P_FONT === '' || (!FONT_MAP[P_FONT] && !FONT_SLUG_MAP[P_FONT]))
-    ? fontRng.pick(FONTS)
-    : (FONT_MAP[P_FONT] || FONT_SLUG_MAP[P_FONT]);
+  // Read time from URL param (set by liquid with TRMNL's UTC offset)
+  const params  = new URLSearchParams(location.search);
+  const offset  = parseInt(params.get('offset')) || 0;
+  const showIsh = params.get('ish') === 'true' || params.get('ish') === '1';
 
-  // ── Day header ────────────────────────────────────────────────────────────
-  // ── Phrase pool for day header ──────────────────────────────────────────
-  const PHRASES = [
-    // chill / soft
-    'softly','breathe','just this','unfold','still here','be gentle','this moment','open wide',
-    // energetic / inspiring
-    'rise up','make it count','go further','ignite','chase it','light it up','push through','claim it',
-    // motivational
-    "you've got this",'keep going','one more step','begin again','show up','stay the course','believe it','keep the faith',
-    // dreamy / poetic
-    'wander freely','dream louder','bloom','open skies','the world waits','float on','let it be','shine on',
-    // bonus
-    'make waves','eyes open','feel it','own today','go gently','spark it','trust yourself','flow'
-  ];
-  const phraseIdx = rng.int(0, PHRASES.length - 1);
-  const phrase    = PHRASES[phraseIdx];
-
-  if (P_DAY === 'on' || P_DAY === 'true') {
-    const now2   = new Date(Date.now() + P_OFFSET * 1000);
-    const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const MONTHS = ['January','February','March','April','May','June',
-                    'July','August','September','October','November','December'];
-    const hdr = document.getElementById('day-header');
-    const dateStr = DAYS[now2.getUTCDay()] + ' · ' + MONTHS[now2.getUTCMonth()] + ' ' + now2.getUTCDate();
-    hdr.textContent = phrase + ' · ' + dateStr;
-    hdr.style.display = 'block';
-  }
-
-
-
-  // ── Load font then draw ───────────────────────────────────────────────────
   const link = document.createElement('link');
   link.rel  = 'stylesheet';
   link.href = 'https://fonts.googleapis.com/css2?family=' + fontObj.url + '&display=swap';
   document.head.appendChild(link);
 
   document.fonts.load(fontObj.weight + ' 40px \'' + fontObj.family + '\'')
-    .then(drawAll).catch(drawAll);
+    .then(draw).catch(draw);
 
-  // ── Weather display ────────────────────────────────────────────────────
-  if ((P_WEATHER === 'true' || P_WEATHER === 'on') && P_WTTR_COND) {
-    const COND_MAP = {
-      'sunny': '☀', 'clear': '☀', 'partly cloudy': '⛅', 'cloudy': '☁',
-      'overcast': '☁', 'mist': '🌫', 'fog': '🌫', 'rain': '🌧',
-      'drizzle': '🌦', 'snow': '❄', 'sleet': '🌨', 'thunder': '⛈',
-      'blizzard': '❄', 'ice': '❄'
-    };
-    const condLower = P_WTTR_COND.toLowerCase();
-    let icon = '🌡';
-    for (const key in COND_MAP) { if (condLower.includes(key)) { icon = COND_MAP[key]; break; } }
-
-    const unit = (P_TEMPUNIT === 'celsius' || P_TEMPUNIT === 'Celsius') ? '°c' : '°f';
-    const condText  = icon + ' ' + condLower;
-    const tempText  = P_WTTR_TEMP + unit;
-
-    const weather = document.getElementById('weather-bar');
-    document.getElementById('weather-left').textContent  = condText;
-    document.getElementById('weather-right').textContent = tempText;
-    weather.style.display = 'flex';
-  }
-
-  // ── Draw everything ───────────────────────────────────────────────────────
-  function drawAll() {
-
-    // 1. blank bg
+  function draw() {
+    // blank bg
     ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, W, H);
 
-    // 2. offscreen pattern
+    // offscreen pattern
     const off = document.createElement('canvas');
     off.width = W; off.height = H;
     const oc  = off.getContext('2d');
@@ -197,18 +101,18 @@
     oc.translate(W/2, H/2);
     oc.rotate(rotation);
     const diag = Math.ceil(Math.sqrt(W*W + H*H));
-    const ox = -diag/2, oy = -diag/2;
+    const ox = -diag/2;
     const cols = Math.ceil(diag/tileSize) + 2;
     const rows = Math.ceil(diag/tileSize) + 2;
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const x    = ox + col*tileSize;
-        const y    = oy + row*tileSize;
+        const y    = ox + row*tileSize;
         const even = (row+col) % 2 === 0;
         const ts   = jitter ? tileSize + rng.range(-tileSize*0.08, tileSize*0.08) : tileSize;
         oc.fillStyle = even ? pal.bg : pal.fg;
-        oc.fillRect(ox + col*tileSize, oy + row*tileSize, ts, ts);
+        oc.fillRect(ox + col*tileSize, ox + row*tileSize, ts, ts);
         const fill = (useAccent && rng.next()>0.88) ? pal.accent : (even ? pal.fg : pal.bg);
         oc.save();
         oc.translate(x + tileSize/2, y + tileSize/2);
@@ -218,35 +122,31 @@
     }
     oc.restore();
 
-    // 3. time string
-    const now     = new Date(Date.now() + P_OFFSET * 1000);
-    const hh      = now.getUTCHours();
-    const mm      = String(now.getUTCMinutes()).padStart(2, '0');
-    const ampm    = hh >= 12 ? 'pm' : 'am';
-    const h12     = hh % 12 || 12;
-    const ishStr  = (P_ISH === 'on' || P_ISH === 'true' || P_ISH === true || P_ISH === '1') ? 'ish' : '';
+    // time
+    const now   = new Date(Date.now() + offset * 1000);
+    const hh    = now.getUTCHours();
+    const mm    = String(now.getUTCMinutes()).padStart(2, '0');
+    const ampm  = hh >= 12 ? 'pm' : 'am';
+    const h12   = hh % 12 || 12;
     const timeStr = h12 + ':' + mm;
-    const suffStr = ' ' + ampm + (ishStr ? ' ' + ishStr : '');
+    const suffStr = ' ' + ampm + (showIsh ? ' ish' : '');
 
-    // 4. font sizes
     const fontSize  = Math.min(W * 0.30, H * 0.44);
     const fam       = "'" + fontObj.family + "', Georgia, serif";
     const mainFont  = fontObj.weight + ' ' + fontSize + 'px ' + fam;
     const smallSize = fontSize * 0.24;
     const smallFont = fontObj.weight + ' ' + smallSize + 'px ' + fam;
 
-    // measure to center group
-    const mCtx = document.createElement('canvas').getContext('2d');
-    mCtx.font  = mainFont;
-    const mainW  = mCtx.measureText(timeStr).width;
-    mCtx.font  = smallFont;
-    const suffW  = mCtx.measureText(suffStr).width;
-    const gap    = fontSize * 0.05;
-    const totalW = mainW + gap + suffW;
-    const startX = (W - totalW) / 2;
+    const mCtx  = document.createElement('canvas').getContext('2d');
+    mCtx.font   = mainFont;
+    const mainW = mCtx.measureText(timeStr).width;
+    mCtx.font   = smallFont;
+    const suffW = mCtx.measureText(suffStr).width;
+    const gap   = fontSize * 0.05;
+    const startX  = (W - mainW - gap - suffW) / 2;
     const centerY = H / 2;
 
-    // 5. text mask
+    // mask
     const mask = document.createElement('canvas');
     mask.width = W; mask.height = H;
     const mc   = mask.getContext('2d');
@@ -258,17 +158,16 @@
     mc.font = smallFont;
     mc.fillText(suffStr, startX + mainW + gap, centerY + fontSize * 0.14);
 
-    // 6. composite pattern into text
+    // composite
     const result = document.createElement('canvas');
     result.width = W; result.height = H;
     const rc = result.getContext('2d');
     rc.drawImage(off, 0, 0);
     rc.globalCompositeOperation = 'destination-in';
     rc.drawImage(mask, 0, 0);
-
     ctx.drawImage(result, 0, 0);
 
-    // 7. outline
+    // outline
     ctx.save();
     ctx.strokeStyle = pal.fg;
     ctx.lineWidth   = Math.max(1.5, fontSize * 0.007);
@@ -282,12 +181,11 @@
     ctx.restore();
   }
 
-  // ── Tile drawing ──────────────────────────────────────────────────────────
   function drawTile(ctx, type, ts, fill, pal, rng, even, bw) {
     const h = ts/2;
     switch(type) {
       case 'checker':
-        if (!even){ctx.fillStyle=fill;ctx.fillRect(-h,-h,ts,ts);} break;
+        if(!even){ctx.fillStyle=fill;ctx.fillRect(-h,-h,ts,ts);} break;
       case 'diamond':
         ctx.fillStyle=fill;ctx.beginPath();
         ctx.moveTo(0,-h);ctx.lineTo(h,0);ctx.lineTo(0,h);ctx.lineTo(-h,0);
@@ -310,7 +208,7 @@
         ctx.fillStyle=fill;ctx.beginPath();ctx.arc(0,0,h*0.58,0,Math.PI*2);ctx.fill();break;
       case 'triangles':
         ctx.fillStyle=fill;ctx.beginPath();
-        if(even){ctx.moveTo(0,-h);ctx.lineTo(h,h); ctx.lineTo(-h,h); }
+        if(even){ctx.moveTo(0,-h);ctx.lineTo(h,h); ctx.lineTo(-h,h);}
         else    {ctx.moveTo(0,h); ctx.lineTo(h,-h);ctx.lineTo(-h,-h);}
         ctx.closePath();ctx.fill();break;
       case 'hexagons':
@@ -322,7 +220,7 @@
       case 'zigzag':
         ctx.fillStyle=fill;ctx.beginPath();
         if(even){ctx.moveTo(-h,-h);ctx.lineTo(0,0);ctx.lineTo(h,-h);ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
-        else    {ctx.moveTo(-h,0); ctx.lineTo(0,-h);ctx.lineTo(h,0); ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
+        else    {ctx.moveTo(-h,0);ctx.lineTo(0,-h);ctx.lineTo(h,0);ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
         ctx.closePath();ctx.fill();break;
       case 'cross':{
         const arm=ts*0.28;ctx.fillStyle=fill;
