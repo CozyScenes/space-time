@@ -4,115 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cozy Scenes: Space Time</title>
-
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #f5f2ec; }
+  canvas { display: block; width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #f5f2ec;
-  font-family: system-ui, -apple-system, sans-serif;
-}
+  .ui { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
 
-/* CANVAS (unchanged) */
-canvas {
-  display: block;
-  width: 100vw;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
-/* ===== NEW UI LAYER ===== */
-.ui {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* shared pill style */
-.pill {
-  position: absolute;
-  bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border-radius: 999px;
-
-  background: #f7f1e8;
-  border: 1.5px solid rgba(70, 55, 40, 0.55);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
-
-  color: #4a3f35;
-  line-height: 1;
-}
-
-/* LEFT: weather */
-.weather {
-  left: 14px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: lowercase;
-}
-
-/* RIGHT: temp */
-.temp {
-  right: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  justify-content: center;
-  min-width: 80px;
-}
-
-/* icons */
-.icon {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-}
-
-.temp .icon {
-  width: 20px;
-  height: 20px;
-}
-
-/* subtle text tweak */
-.label {
-  transform: translateY(0.5px);
-}
+  .pill {
+    position: absolute;
+    bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #f7f1e8;
+    border: 1.5px solid rgba(70,55,40,0.55);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+    color: #4a3f35;
+    line-height: 1;
+  }
+  .weather { left: 14px; font-size: 11px; font-weight: 600; text-transform: lowercase; }
+  .temp { right: 14px; font-size: 14px; font-weight: 700; justify-content: center; min-width: 70px; }
+  .icon { width: 18px; height: 18px; flex: 0 0 18px; }
+  .temp .icon { width: 20px; height: 20px; }
 </style>
 </head>
-
 <body>
-
 <canvas id="c"></canvas>
 
-<!-- ===== UI OVERLAY ===== -->
 <div class="ui">
-  <div class="pill weather">
-    <span class="icon">
-      <!-- cloud + sun -->
-      <svg viewBox="0 0 24 24" width="100%" height="100%">
-        <circle cx="8" cy="9" r="4" fill="#f6c64b"/>
-        <path d="M9 18h8a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9-1.5A4 4 0 0 0 9 18Z"
-              fill="#f4eee7" stroke="#b59683" stroke-width="1"/>
-      </svg>
-    </span>
-    <span class="label">partly cloudy</span>
+  <div class="pill weather" id="wx-pill" style="display:none;">
+    <span class="icon" id="wx-icon"></span>
+    <span id="wx-label"></span>
   </div>
-
-  <div class="pill temp">
-    <span class="icon">
-      <!-- sun -->
-      <svg viewBox="0 0 24 24" width="100%" height="100%">
-        <circle cx="12" cy="12" r="5" fill="#f6c64b"/>
-      </svg>
-    </span>
-    <span>57°</span>
+  <div class="pill temp" id="temp-pill" style="display:none;">
+    <span class="icon" id="temp-icon"></span>
+    <span id="temp-label"></span>
   </div>
 </div>
 
@@ -134,84 +63,279 @@ canvas {
   const fontRng = Rng((seed * 2654435761) >>> 0);
 
   const FONTS = [
-    { family: 'Bebas Neue', url: 'Bebas+Neue', weight: '400' },
-    { family: 'Abril Fatface', url: 'Abril+Fatface', weight: '400' },
-    { family: 'Bangers', url: 'Bangers', weight: '400' },
-    { family: 'Pacifico', url: 'Pacifico', weight: '400' },
-    { family: 'Ultra', url: 'Ultra', weight: '400' },
-    { family: 'Alfa Slab One', url: 'Alfa+Slab+One', weight: '400' },
-    { family: 'Lobster', url: 'Lobster', weight: '400' },
-    { family: 'Press Start 2P', url: 'Press+Start+2P', weight: '400' },
+    { family: 'Bebas Neue',       url: 'Bebas+Neue',       weight: '400' },
+    { family: 'Abril Fatface',    url: 'Abril+Fatface',    weight: '400' },
+    { family: 'Bangers',          url: 'Bangers',          weight: '400' },
+    { family: 'Pacifico',         url: 'Pacifico',         weight: '400' },
+    { family: 'Ultra',            url: 'Ultra',            weight: '400' },
+    { family: 'Alfa Slab One',    url: 'Alfa+Slab+One',    weight: '400' },
+    { family: 'Lobster',          url: 'Lobster',          weight: '400' },
+    { family: 'Press Start 2P',   url: 'Press+Start+2P',   weight: '400' },
     { family: 'Permanent Marker', url: 'Permanent+Marker', weight: '400' },
-    { family: 'Cinzel', url: 'Cinzel:wght@900', weight: '900' },
-    { family: 'Russo One', url: 'Russo+One', weight: '400' },
-    { family: 'Boogaloo', url: 'Boogaloo', weight: '400' },
+    { family: 'Cinzel',           url: 'Cinzel:wght@900',  weight: '900' },
+    { family: 'Russo One',        url: 'Russo+One',        weight: '400' },
+    { family: 'Boogaloo',         url: 'Boogaloo',         weight: '400' },
   ];
 
   const PALETTES = [
     { bg: '#f5f2ec', fg: '#1a1a1a', accent: '#8c8c8c' },
     { bg: '#e8e4dc', fg: '#2a2a2a', accent: '#aaa49a' },
-    { bg: '#f0ece4', fg: '#111', accent: '#b0aba0' },
-    { bg: '#d8d4cc', fg: '#222', accent: '#888' },
+    { bg: '#f0ece4', fg: '#111',    accent: '#b0aba0'  },
+    { bg: '#1c1c1c', fg: '#ede9e0', accent: '#666'     },
+    { bg: '#2c2c2c', fg: '#e0dcd4', accent: '#888'     },
+    { bg: '#d8d4cc', fg: '#222',    accent: '#888'     },
+    { bg: '#f5f2ec', fg: '#555',    accent: '#bbb'     },
+    { bg: '#111',    fg: '#ddd',    accent: '#555'     },
   ];
 
-  const PATTERNS = ['checker','diamond','stripes_diag','dots','triangles','hexagons'];
+  const PATTERNS = [
+    'checker','diamond','houndstooth','stripes_h','stripes_v',
+    'stripes_diag','dots','triangles','hexagons','zigzag','cross','woven',
+  ];
 
   const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
-
-  canvas.width = window.innerWidth;
+  const ctx    = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
+  const W = canvas.width, H = canvas.height;
 
-  const W = canvas.width;
-  const H = canvas.height;
-
-  const pal = rng.pick(PALETTES);
-  const patType = rng.pick(PATTERNS);
-  const tileSize = rng.pick([24, 32, 44, 56]);
+  const pal      = rng.pick(PALETTES);
+  const patType  = rng.pick(PATTERNS);
+  const tileSize = rng.pick([18, 24, 32, 44, 56, 72, 88]);
   const rotation = rng.range(0, Math.PI * 2);
+  const useAccent = rng.next() > 0.6;
+  const jitter    = rng.next() > 0.7;
+  const borderW   = rng.next() > 0.6 ? rng.range(0.5, 2.0) : 0;
+  const fontObj   = fontRng.pick(FONTS);
 
-  const fontObj = fontRng.pick(FONTS);
+  const params  = new URLSearchParams(location.search);
+  const offset  = parseInt(params.get('offset')) || 0;
+  const showIsh = params.get('ish') === 'true' || params.get('ish') === '1';
 
-  const params = new URLSearchParams(location.search);
-  const offset = parseInt(params.get('offset')) || 0;
-  const showIsh = true;
+  // Weather pills — read from URL params (set by liquid)
+  const wxCond = decodeURIComponent(params.get('cond') || '');
+  const wxTemp = params.get('temp') || '';
+  const wxUnit = params.get('unit') || '';
+
+  if (wxCond && wxTemp) {
+    var condL = wxCond.toLowerCase();
+
+    // SVG icons by condition
+    var ICONS = {
+      sun:     '<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="5" fill="#f6c64b"/><g stroke="#f6c64b" stroke-width="1.5"><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7" y2="7"/><line x1="17" y1="17" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7" y2="17"/><line x1="17" y1="7" x2="19.1" y2="4.9"/></g></svg>',
+      cloud:   '<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="8" cy="9" r="4" fill="#f6c64b"/><path d="M9 18h8a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9-1.5A4 4 0 0 0 9 18Z" fill="#e8e0d4" stroke="#b59683" stroke-width="1"/></svg>',
+      rain:    '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M7 13h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10-1A4.5 4.5 0 0 0 7 13Z" fill="#c8c0b4" stroke="#a09080" stroke-width="1"/><line x1="8" y1="15" x2="7" y2="19" stroke="#8ab4d8" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="15" x2="11" y2="19" stroke="#8ab4d8" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="15" x2="15" y2="19" stroke="#8ab4d8" stroke-width="1.5" stroke-linecap="round"/></svg>',
+      snow:    '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M7 12h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10-1A4.5 4.5 0 0 0 7 12Z" fill="#d8d4cc" stroke="#a09080" stroke-width="1"/><circle cx="8" cy="16" r="1.2" fill="#c8d8e8"/><circle cx="12" cy="18" r="1.2" fill="#c8d8e8"/><circle cx="16" cy="16" r="1.2" fill="#c8d8e8"/></svg>',
+      thunder: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path d="M7 12h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10-1A4.5 4.5 0 0 0 7 12Z" fill="#a09890" stroke="#807870" stroke-width="1"/><polygon points="12,13 10,17 13,17 11,21" fill="#f6c64b"/></svg>',
+      fog:     '<svg viewBox="0 0 24 24" width="100%" height="100%"><line x1="4" y1="8" x2="20" y2="8" stroke="#b0a898" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="12" x2="18" y2="12" stroke="#b0a898" stroke-width="2" stroke-linecap="round"/><line x1="4" y1="16" x2="20" y2="16" stroke="#b0a898" stroke-width="2" stroke-linecap="round"/></svg>',
+      def:     '<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="5" fill="#f6c64b"/></svg>'
+    };
+
+    var icon = ICONS.def;
+    if (condL.includes('sun') || condL.includes('clear')) icon = ICONS.sun;
+    else if (condL.includes('partly')) icon = ICONS.cloud;
+    else if (condL.includes('cloud') || condL.includes('overcast')) icon = ICONS.cloud;
+    else if (condL.includes('rain') || condL.includes('drizzle') || condL.includes('shower')) icon = ICONS.rain;
+    else if (condL.includes('snow') || condL.includes('blizzard') || condL.includes('sleet')) icon = ICONS.snow;
+    else if (condL.includes('thunder')) icon = ICONS.thunder;
+    else if (condL.includes('fog') || condL.includes('mist')) icon = ICONS.fog;
+
+    document.getElementById('wx-icon').innerHTML = icon;
+    document.getElementById('wx-label').textContent = condL;
+    document.getElementById('wx-pill').style.display = 'flex';
+
+    document.getElementById('temp-icon').innerHTML = ICONS.sun;
+    document.getElementById('temp-label').textContent = wxTemp + wxUnit;
+    document.getElementById('temp-pill').style.display = 'flex';
+  }
 
   const link = document.createElement('link');
-  link.rel = 'stylesheet';
+  link.rel  = 'stylesheet';
   link.href = 'https://fonts.googleapis.com/css2?family=' + fontObj.url + '&display=swap';
   document.head.appendChild(link);
 
-  document.fonts.load(fontObj.weight + ' 40px ' + fontObj.family)
-    .then(draw);
+  document.fonts.load(fontObj.weight + ' 40px \'' + fontObj.family + '\'')
+    .then(draw).catch(draw);
 
   function draw() {
-
     ctx.fillStyle = pal.bg;
-    ctx.fillRect(0,0,W,H);
+    ctx.fillRect(0, 0, W, H);
 
-    const now = new Date(Date.now() + offset * 1000);
+    // offscreen pattern
+    var off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    var oc = off.getContext('2d');
+    oc.save();
+    oc.translate(W/2, H/2);
+    oc.rotate(rotation);
+    var diag = Math.ceil(Math.sqrt(W*W + H*H));
+    var ox = -diag/2;
+    var cols = Math.ceil(diag/tileSize) + 2;
+    var rows = Math.ceil(diag/tileSize) + 2;
 
-    let h = now.getHours();
-    let m = String(now.getMinutes()).padStart(2,'0');
+    for (var row = 0; row < rows; row++) {
+      for (var col = 0; col < cols; col++) {
+        var x    = ox + col*tileSize;
+        var y    = ox + row*tileSize;
+        var even = (row+col) % 2 === 0;
+        var ts   = jitter ? tileSize + rng.range(-tileSize*0.08, tileSize*0.08) : tileSize;
+        oc.fillStyle = even ? pal.bg : pal.fg;
+        oc.fillRect(ox+col*tileSize, ox+row*tileSize, ts, ts);
+        var fill = (useAccent && rng.next()>0.88) ? pal.accent : (even ? pal.fg : pal.bg);
+        oc.save();
+        oc.translate(x+tileSize/2, y+tileSize/2);
+        drawTile(oc, patType, ts, fill, pal, rng, even, borderW);
+        oc.restore();
+      }
+    }
+    oc.restore();
 
-    const ampm = h >= 12 ? 'pm' : 'am';
-    h = h % 12 || 12;
+    // time
+    var now   = new Date(Date.now() + offset * 1000);
+    var hh    = now.getUTCHours();
+    var mm    = String(now.getUTCMinutes()).padStart(2, '0');
+    var ampm  = hh >= 12 ? 'pm' : 'am';
+    var h12   = hh % 12 || 12;
+    var timeStr = h12 + ':' + mm;
+    var ampmStr = ampm;
 
-    const timeStr = h + ':' + m;
-    const suffStr = ' ' + ampm + ' ish...';
+    var fontSize  = Math.min(W * 0.30, H * 0.44);
+    var fam       = "'" + fontObj.family + "', Georgia, serif";
+    var mainFont  = fontObj.weight + ' ' + fontSize + 'px ' + fam;
+    var smallSize = fontSize * 0.24;
+    var smallFont = fontObj.weight + ' ' + smallSize + 'px ' + fam;
+    var ishSize   = fontSize * 0.18;
+    var ishFont   = fontObj.weight + ' ' + ishSize + 'px ' + fam;
 
-    const fontSize = Math.min(W * 0.30, H * 0.44);
-    ctx.font = fontSize + 'px ' + fontObj.family;
-    ctx.fillStyle = pal.fg;
-    ctx.textAlign = 'center';
+    var mCtx = document.createElement('canvas').getContext('2d');
+    mCtx.font = mainFont;
+    var mainW = mCtx.measureText(timeStr).width;
+    mCtx.font = smallFont;
+    var ampmW = mCtx.measureText(ampmStr).width;
+    mCtx.font = ishFont;
+    var ishW  = mCtx.measureText('ish...').width;
+
+    // layout: time + pm stacked with ish... below pm
+    var rightW = Math.max(ampmW, ishW);
+    var gap    = fontSize * 0.05;
+    var totalW = mainW + gap + rightW;
+    var startX = (W - totalW) / 2;
+    var centerY = H / 2;
+
+    // mask canvas
+    var mask = document.createElement('canvas');
+    mask.width = W; mask.height = H;
+    var mc = mask.getContext('2d');
+    mc.fillStyle = '#000';
+
+    // main time
+    mc.font = mainFont;
+    mc.textAlign = 'left';
+    mc.textBaseline = 'middle';
+    mc.fillText(timeStr, startX, centerY);
+
+    // pm — right of time, vertically centered with top half
+    mc.font = smallFont;
+    mc.textBaseline = 'top';
+    mc.fillText(ampmStr, startX + mainW + gap, centerY - fontSize * 0.18);
+
+    // ish... below pm
+    if (showIsh) {
+      mc.font = ishFont;
+      mc.textBaseline = 'top';
+      mc.fillText('ish...', startX + mainW + gap, centerY + fontSize * 0.08);
+    }
+
+    // composite pattern into text
+    var result = document.createElement('canvas');
+    result.width = W; result.height = H;
+    var rc = result.getContext('2d');
+    rc.drawImage(off, 0, 0);
+    rc.globalCompositeOperation = 'destination-in';
+    rc.drawImage(mask, 0, 0);
+    ctx.drawImage(result, 0, 0);
+
+    // outline
+    ctx.save();
+    ctx.strokeStyle = pal.fg;
+    ctx.lineWidth   = Math.max(1.5, fontSize * 0.007);
+    ctx.lineJoin    = 'round';
+
+    ctx.font = mainFont;
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
+    ctx.strokeText(timeStr, startX, centerY);
 
-    ctx.fillText(timeStr, W/2, H/2);
+    ctx.font = smallFont;
+    ctx.textBaseline = 'top';
+    ctx.strokeText(ampmStr, startX + mainW + gap, centerY - fontSize * 0.18);
+
+    if (showIsh) {
+      ctx.font = ishFont;
+      ctx.textBaseline = 'top';
+      ctx.strokeText('ish...', startX + mainW + gap, centerY + fontSize * 0.08);
+    }
+    ctx.restore();
+  }
+
+  function drawTile(ctx, type, ts, fill, pal, rng, even, bw) {
+    var h = ts/2;
+    switch(type) {
+      case 'checker':
+        if(!even){ctx.fillStyle=fill;ctx.fillRect(-h,-h,ts,ts);} break;
+      case 'diamond':
+        ctx.fillStyle=fill;ctx.beginPath();
+        ctx.moveTo(0,-h);ctx.lineTo(h,0);ctx.lineTo(0,h);ctx.lineTo(-h,0);
+        ctx.closePath();ctx.fill();break;
+      case 'houndstooth':
+        ctx.fillStyle=fill;ctx.beginPath();
+        if(even){ctx.moveTo(-h,-h);ctx.lineTo(h,-h);ctx.lineTo(-h,h);}
+        else    {ctx.moveTo(h,h); ctx.lineTo(-h,h);ctx.lineTo(h,-h);}
+        ctx.closePath();ctx.fill();
+        if(even){ctx.fillStyle=pal.fg;ctx.beginPath();ctx.moveTo(0,-h);ctx.lineTo(h,-h);ctx.lineTo(h,0);ctx.closePath();ctx.fill();}
+        break;
+      case 'stripes_h':
+        ctx.fillStyle=fill;ctx.fillRect(-h,-h*0.5,ts,ts*0.5);break;
+      case 'stripes_v':
+        ctx.fillStyle=fill;ctx.fillRect(-h*0.5,-h,ts*0.5,ts);break;
+      case 'stripes_diag':
+        ctx.fillStyle=fill;ctx.save();ctx.rotate(Math.PI/4);
+        ctx.fillRect(-h*0.4,-h*1.5,ts*0.4,ts*1.5);ctx.restore();break;
+      case 'dots':
+        ctx.fillStyle=fill;ctx.beginPath();ctx.arc(0,0,h*0.58,0,Math.PI*2);ctx.fill();break;
+      case 'triangles':
+        ctx.fillStyle=fill;ctx.beginPath();
+        if(even){ctx.moveTo(0,-h);ctx.lineTo(h,h);ctx.lineTo(-h,h);}
+        else    {ctx.moveTo(0,h);ctx.lineTo(h,-h);ctx.lineTo(-h,-h);}
+        ctx.closePath();ctx.fill();break;
+      case 'hexagons':
+        ctx.fillStyle=fill;ctx.beginPath();
+        for(var i=0;i<6;i++){var a=(Math.PI/3)*i-Math.PI/6;
+          i===0?ctx.moveTo(Math.cos(a)*h*0.9,Math.sin(a)*h*0.9):ctx.lineTo(Math.cos(a)*h*0.9,Math.sin(a)*h*0.9);}
+        ctx.closePath();ctx.fill();
+        if(bw>0){ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;ctx.stroke();}break;
+      case 'zigzag':
+        ctx.fillStyle=fill;ctx.beginPath();
+        if(even){ctx.moveTo(-h,-h);ctx.lineTo(0,0);ctx.lineTo(h,-h);ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
+        else    {ctx.moveTo(-h,0);ctx.lineTo(0,-h);ctx.lineTo(h,0);ctx.lineTo(h,h);ctx.lineTo(0,0);ctx.lineTo(-h,h);}
+        ctx.closePath();ctx.fill();break;
+      case 'cross':{
+        var arm=ts*0.28;ctx.fillStyle=fill;
+        ctx.fillRect(-arm,-h,arm*2,ts);ctx.fillRect(-h,-arm,ts,arm*2);break;}
+      case 'woven':
+        ctx.fillStyle=fill;
+        if(even) ctx.fillRect(-h,-h*0.38,ts,ts*0.38);
+        else     ctx.fillRect(-h*0.38,-h,ts*0.38,ts);
+        if(bw>0){ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;
+          if(even) ctx.strokeRect(-h,-h*0.38,ts,ts*0.38);
+          else     ctx.strokeRect(-h*0.38,-h,ts*0.38,ts);}
+        break;
+    }
+    if(bw>0&&type!=='hexagons'&&type!=='woven'){
+      ctx.strokeStyle=pal.bg;ctx.lineWidth=bw;ctx.strokeRect(-h,-h,ts,ts);}
   }
 
 })();
 </script>
-
 </body>
 </html>
